@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.project.dao.CommentDAO">
+    <!--resultMap:处理表和DO对象的属性映射，确保表中的每个字段都有属性可以匹配-->
+    <!--id:映射的唯一标识，一般命名为xxxResultMap-->
+    <!--type:对应的DO类完整路径-->
+    <resultMap id="commentResultMap" type="com.example.project.dataobject.CommentDO">
+        <!--id:设置数据库主键字段信息-->
+        <!--column:表的字段名称-->
+        <!--property:对应的DO属性名称-->
+        <id column="id" property="id"/>
+        <!--result:设置数据库其他字段信息-->
+        <result column="area" property="area"/>
+        <result column="area_id" property="areaId"/>
+        <result column="area_name" property="areaName"/>
+        <result column="content" property="content"/>
+        <result column="parent_id" property="parentId"/>
+
+<!--        <result column="user_id" property="userId"/>-->
+        <result column="gmt_created" property="gmtCreated"/>
+        <result column="gmt_modified" property="gmtModified"/>
+
+        <association property="user" javaType="com.example.project.model.User">
+            <id property="id" column="user_id"/>
+            <result column="user_name" property="name"/>
+            <result column="user_avatar" property="avatar"/>
+        </association>
+    </resultMap>
+
+    <resultMap id="commentResultMapNoUser" type="com.example.project.dataobject.CommentDO">
+        <!--id:设置数据库主键字段信息-->
+        <!--column:表的字段名称-->
+        <!--property:对应的DO属性名称-->
+        <id column="id" property="id"/>
+        <!--result:设置数据库其他字段信息-->
+        <result column="area" property="area"/>
+        <result column="area_id" property="areaId"/>
+        <result column="area_name" property="areaName"/>
+        <result column="content" property="content"/>
+        <result column="parent_id" property="parentId"/>
+
+        <result column="user_id" property="userId"/>
+        <result column="gmt_created" property="gmtCreated"/>
+        <result column="gmt_modified" property="gmtModified"/>
+    </resultMap>
+
+    <insert id="addComment" parameterType="com.example.project.dataobject.CommentDO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `comment`(`area`,`area_id`,`area_name`,`content`,`parent_id`,`user_id`)
+        VALUES (#{area},#{areaId},#{areaName},#{content},#{parentId},#{userId});
+    </insert>
+
+    <select id="getTopCommentByArea" resultMap="commentResultMap">
+        SELECT
+            c.*,
+            u.`name` as user_name,
+            u.avatar as user_avatar
+        FROM
+            COMMENT c
+            LEFT JOIN USER u ON c.user_id = u.id
+        WHERE
+            c.area = #{area}
+            AND c.area_id = #{areaId}
+            AND c.parent_id is null
+        ORDER BY
+            c.gmt_created DESC
+    </select>
+
+    <select id="getTopCommentByUser" resultMap="commentResultMapNoUser">
+        SELECT
+        *
+        FROM
+        COMMENT
+        WHERE
+        user_id = #{userId}
+        AND parent_id IS NULL
+        ORDER BY
+        gmt_created DESC
+    </select>
+
+    <select id="getSubCommentCount" resultType="Long">
+        SELECT
+        count(*)
+        FROM COMMENT
+        WHERE
+        area = #{area}
+        AND area_id = #{areaId}
+        AND parent_id = #{parentId}
+    </select>
+
+    <select id="getSubComment" resultMap="commentResultMap">
+        SELECT
+        c.*,
+        u.`name` as user_name,
+        u.avatar as user_avatar
+        FROM
+        COMMENT c
+        LEFT JOIN USER u ON c.user_id = u.id
+        WHERE
+        c.parent_id = #{parentId}
+        ORDER BY
+        c.gmt_created DESC
+    </select>
+
+</mapper>
